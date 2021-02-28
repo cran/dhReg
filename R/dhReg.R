@@ -29,7 +29,8 @@
 #' @export dhr
 
 dhr <- function(Data, Range, XREG = NULL, Frequency, Criteria = "aicc", maxp = 5, maxq = 5, maxd = 5){#, p1 = NULL, q1 = NULL, d1 = NULL){
-  plan(multiprocess)
+  if (future::supportsMulticore()) future::plan(future::multiprocess)
+  if (future::supportsMulticore() == FALSE) future::plan(future::multisession)
   if(length(Frequency) == 5){
     bb <- future_sapply(Range[1][[1]], function(i){
       future_sapply(Range[2][[1]], function(j){
@@ -299,7 +300,7 @@ dhr <- function(Data, Range, XREG = NULL, Frequency, Criteria = "aicc", maxp = 5
 #' @export fourier_K
 fourier_K <- function(Fit){
   names(Fit$coef)
-  coeff <- names(Fit$coef)[grepl(pattern = "S", names(Fit$coef)) | grepl(pattern = "C", names(Fit$coef))]
+  coeff <- names(Fit$coef)[grepl(pattern = "^S[0-9]?[0-9]?[0-9]-", names(Fit$coef)) | grepl(pattern = "^C[0-9]?[0-9]?[0-9]-", names(Fit$coef))]
   q <- strsplit(coeff, "-")
   K <- c()
   for(i in 1:length(q)){
@@ -338,7 +339,7 @@ fourier_K <- function(Fit){
 #' }
 #' @export fc
 fc <- function(Frequency, XREG_test = NULL, h, Fit, Data){
-  coeff <- names(Fit$coef)[grepl(pattern = "S", names(Fit$coef)) | grepl(pattern = "C", names(Fit$coef))]
+  coeff <- names(Fit$coef)[grepl(pattern = "^S[0-9]?[0-9]?[0-9]-", names(Fit$coef)) | grepl(pattern = "^C[0-9]?[0-9]?[0-9]-", names(Fit$coef))]
   q <- strsplit(coeff, "-")
   K <- c()
   for(i in 1:length(q)){
@@ -348,51 +349,51 @@ fc <- function(Frequency, XREG_test = NULL, h, Fit, Data){
   if(length(Frequency) == 5){
     if(!is.null(XREG_test)){
       forecast(Fit,
-               xreg=cbind(fourier(msts(Data, seasonal.periods = c(Frequency[1], Frequency[2], Frequency[3], Frequency[4], Frequency[5])), K = c(K[1], K[2], K[3], K[4], K[5])), XREG_test)
+               xreg=cbind(fourier(msts(Data, seasonal.periods = c(Frequency[1], Frequency[2], Frequency[3], Frequency[4], Frequency[5])), K = c(K[as.character(Frequency[1])], K[as.character(Frequency[2])], K[as.character(Frequency[3])], K[as.character(Frequency[4])], K[as.character(Frequency[5])]), h = h), XREG_test)
                , h = h)
     }else{
       forecast(Fit,
-               xreg = fourier(msts(Data, seasonal.periods = c(Frequency[1], Frequency[2], Frequency[3], Frequency[4], Frequency[5])), K = c(K[1], K[2], K[3], K[4], K[5]))
+               xreg = fourier(msts(Data, seasonal.periods = c(Frequency[1], Frequency[2], Frequency[3], Frequency[4], Frequency[5])), K = c(K[as.character(Frequency[1])], K[as.character(Frequency[2])], K[as.character(Frequency[3])], K[as.character(Frequency[4])], K[as.character(Frequency[5])]), h = h)
       , h = h)
     }
   }else if(length(Frequency) == 4){
     if(!is.null(XREG_test)){
       forecast(Fit,
-               xreg = cbind(fourier(msts(Data, seasonal.periods = c(Frequency[1], Frequency[2], Frequency[3], Frequency[4])), K = c(K[1], K[2], K[3], K[4])), XREG_test)
+               xreg = cbind(fourier(msts(Data, seasonal.periods = c(Frequency[1], Frequency[2], Frequency[3], Frequency[4])), K = c(K[as.character(Frequency[1])], K[as.character(Frequency[2])], K[as.character(Frequency[3])], K[as.character(Frequency[4])]), h = h), XREG_test)
                , h = h)
     }else{
       forecast(Fit,
-               xreg = fourier(msts(Data, seasonal.periods = c(Frequency[1], Frequency[2], Frequency[3], Frequency[4])), K = c(K[1], K[2], K[3], K[4]))
+               xreg = fourier(msts(Data, seasonal.periods = c(Frequency[1], Frequency[2], Frequency[3], Frequency[4])), K = c(K[as.character(Frequency[1])], K[as.character(Frequency[2])], K[as.character(Frequency[3])], K[as.character(Frequency[4])]), h = h)
                , h = h)
     }
   }else if(length(Frequency) == 3){
     if(!is.null(XREG_test)){
       forecast(Fit,
-               xreg=cbind(fourier(msts(Data, seasonal.periods = c(Frequency[1], Frequency[2], Frequency[3])), K = c(K[1], K[2], K[3])), XREG_test)
+               xreg=cbind(fourier(msts(Data, seasonal.periods = c(Frequency[1], Frequency[2], Frequency[3])), K = c(K[as.character(Frequency[1])], K[as.character(Frequency[2])], K[as.character(Frequency[3])]), h = h), XREG_test)
                , h = h)
     }else{
       forecast(Fit,
-               xreg = fourier(msts(Data, seasonal.periods = c(Frequency[1], Frequency[2], Frequency[3])), K = c(K[1], K[2], K[3]))
+               xreg = fourier(msts(Data, seasonal.periods = c(Frequency[1], Frequency[2], Frequency[3])), K = c(K[as.character(Frequency[1])], K[as.character(Frequency[2])], K[as.character(Frequency[3])]), h = h)
       , h = h)
     }
   }else if(length(Frequency) == 2){
     if(!is.null(XREG_test)){
       forecast(Fit,
-               xreg=cbind(fourier(msts(Data, seasonal.periods = c(Frequency[1], Frequency[2])), K = c(K[1], K[2])), XREG_test)
+               xreg=cbind(fourier(msts(Data, seasonal.periods = c(Frequency[1], Frequency[2])), K = c(K[as.character(Frequency[1])], K[as.character(Frequency[2])]), h = h), XREG_test)
                , h = h)
     }else{
       forecast(Fit,
-               xreg = fourier(msts(Data, seasonal.periods = c(Frequency[1], Frequency[2])), K = c(K[1], K[2]))
+               xreg = fourier(msts(Data, seasonal.periods = c(Frequency[1], Frequency[2])), K = c(K[as.character(Frequency[1])], K[as.character(Frequency[2])]), h = h)
       , h = h)
     }
   }else if(length(Frequency) == 1){
     if(!is.null(XREG_test)){
       forecast(Fit,
-               xreg=cbind(fourier(msts(Data, seasonal.periods = c(Frequency[1])), K = c(K[1])), XREG_test)
+               xreg=cbind(fourier(msts(Data, seasonal.periods = c(Frequency[1])), K = c(K[1]), h = h), XREG_test)
                , h = h)
     }else{
       forecast(Fit,
-               xreg = fourier(msts(Data, seasonal.periods = c(Frequency[1])), K = c(K[1]))
+               xreg = fourier(msts(Data, seasonal.periods = c(Frequency[1])), K = c(K[1]), h = h)
       , h = h)
     }
   }
